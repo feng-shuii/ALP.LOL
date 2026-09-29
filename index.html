@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ALP.LOL">
+<meta name="theme-color" content="#050807">
+<title>ALP.LOL v1.1</title>
+<style>
+:root{--bg:#050807;--panel:#0c1310;--line:#1b2b24;--fg:#c8f5dc;--dim:#66857a;--acc:#39ff88;--warn:#ff5a4d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#050807;color:var(--fg);font:13px ui-monospace,Menlo,monospace;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{display:flex;flex-direction:column;gap:10px;max-width:520px;margin:0 auto;padding:12px;overflow-x:hidden}
+h1{margin:0;font-size:17px;letter-spacing:.2em;color:var(--acc);display:flex;justify-content:space-between;align-items:baseline}
+h1 small{font-size:9px;letter-spacing:.1em;color:var(--dim)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:2/1;background:#000;border:1px solid var(--line);border-radius:10px;box-shadow:0 0 30px rgba(57,255,136,.12)}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.s{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.s span{display:block;font-size:9px;letter-spacing:.12em;color:var(--dim)}
+.s b{font-size:18px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.s.w{grid-column:span 2}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.chips.two{grid-template-columns:1fr 1fr}
+button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 0;font-size:13px}
+button.on{border-color:var(--acc);color:var(--acc);background:#0a1f15}
+#go{padding:17px 0;font-size:18px;letter-spacing:.3em;font-weight:700;color:#031008;background:var(--acc);border:0}
+#go.run{background:var(--warn);color:#fff}
+p{margin:0;font-size:10px;color:var(--dim);line-height:1.5;text-align:center}
+#stage{position:relative;overflow:hidden;border-radius:10px}
+#fsb{position:absolute;top:8px;right:8px;width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(5,8,7,.65)}
+#hud{display:none;position:absolute;left:0;right:0;bottom:0;padding:26px 12px calc(12px + env(safe-area-inset-bottom,0px));gap:8px;align-items:center;flex-wrap:wrap;background:linear-gradient(transparent,rgba(0,0,0,.9));transition:opacity .3s;font-size:11px;color:var(--dim)}
+#hud button{padding:9px 13px}
+#hud.hide{opacity:0;pointer-events:none}
+#fgo{background:var(--acc);color:#031008;border:0;font-weight:700}
+#fgo.run{background:var(--warn);color:#fff}
+body.fs{overflow:hidden}
+body.fs #stage{position:fixed;top:0;right:0;bottom:0;left:0;z-index:10;background:#000;border-radius:0;display:flex;align-items:center;justify-content:center}
+body.fs canvas{flex:none;width:min(100vw,200vh);width:min(100vw,200dvh);border:0;border-radius:0;box-shadow:none}
+body.fs #fsb{display:none}
+body.fs #hud{display:flex}
+@media (orientation:portrait){body.fs canvas{width:min(100vh,200vw);width:min(100dvh,200vw);transform:rotate(90deg)}}
+</style></head><body>
+<h1><span style="display:flex;align-items:center;gap:9px"><svg width="34" height="34" viewBox="0 0 40 40" aria-label="ALPR camera"><g fill="#39ff88"><rect x="18" y="22" width="4" height="15"/><rect x="13" y="36" width="14" height="2.5" rx="1"/><polygon points="7,9 31,3 34,8 10,14"/><rect x="9" y="14" width="22" height="10" rx="2.5"/></g><circle cx="20" cy="19" r="3.4" fill="#050807"/><circle cx="20" cy="19" r="1.4" fill="#39ff88"/></svg>ALP.LOL</span> <small>v1.1 // SIMULATOR // FICTIONAL</small></h1>
+<div class="chips two" id="modes"><button class="on" data-m="0">PLATES</button><button data-m="1">CARS</button></div>
+<div id="stage"><canvas id="c" width="840" height="420"></canvas>
+<button id="fsb" aria-label="Full screen"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#39ff88" stroke-width="2"><path d="M2 7V2h5M11 2h5v5M16 11v5h-5M7 16H2v-5"/></svg></button>
+<div id="hud" class="hide"><button id="fx">EXIT</button><button id="fgo">START</button><button id="fm">SHOW CARS</button><span id="fst"></span></div></div>
+<div class="g">
+<div class="s"><span>SIMULATED FPS</span><b id="sim">60</b></div>
+<div class="s"><span>DISPLAY FPS</span><b id="disp">0</b></div>
+<div class="s"><span>ACHIEVED / SEC</span><b id="rate">0</b></div>
+<div class="s"><span>NEW IMAGES SHOWN / SEC</span><b id="shown">0</b></div>
+<div class="s"><span>PROCESSED</span><b id="proc">0</b></div>
+<div class="s"><span>BANK</span><b id="pos">1 / 20,000</b></div>
+<div class="s"><span>PLATE ID</span><b id="pid">-</b></div>
+<div class="s"><span>VEHICLE</span><b id="veh" style="font-size:14px">-</b></div>
+</div>
+<div class="chips" id="chips"></div>
+<button id="go">START</button>
+<p>Screen refresh caps what you can see. Above that, the bank is cycled at the simulated rate and the display shows the latest plate. All plates are generated on-device, in memory. No network needed.</p>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const LET="ABCDEFGHJKLMNPRSTUVWXYZ",CHARS=LET+"0123456789";
+const N=20000,M=23*23*23*10000,K=48271931,C=7919;
+const bank=new Uint8Array(N*7);
+for(let i=0;i<N;i++){const o=i*7;let v=(i*K+C)%M,d=v%10000,l=(v-d)/10000;
+ bank[o+2]=l%23;l=(l-l%23)/23;bank[o+1]=l%23;bank[o]=(l-l%23)/23;
+ bank[o+6]=23+d%10;d=(d-d%10)/10;bank[o+5]=23+d%10;d=(d-d%10)/10;bank[o+4]=23+d%10;bank[o+3]=23+(d-d%10)/10;}
+// glyph atlas (rendered once)
+const CW=100,CH=220,atlas=document.createElement('canvas');atlas.width=CW*CHARS.length;atlas.height=CH;
+{const g=atlas.getContext('2d');g.fillStyle='#101010';g.font='bold 170px "Helvetica Neue",Arial,sans-serif';g.textAlign='center';g.textBaseline='alphabetic';
+ for(let i=0;i<CHARS.length;i++)g.fillText(CHARS[i],i*CW+CW/2,190);}
+// plate backgrounds (rendered once, 4 variants)
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+const V=[["#f3f3ee","#1b4fa0","#fff"],["#f2d541","#3a3a3a","#fff"],["#f7f7f2","#1e7a46","#fff"],["#e8edf4","#b02a2a","#fff"]];
+const bases=V.map(([bg,band,bt])=>{const b=document.createElement('canvas');b.width=840;b.height=420;const g=b.getContext('2d');
+ g.fillStyle='#000';g.fillRect(0,0,840,420);
+ rr(g,4,4,832,412,36);g.fillStyle=bg;g.fill();g.lineWidth=8;g.strokeStyle='#222';g.stroke();
+ rr(g,24,24,792,372,20);g.lineWidth=6;g.strokeStyle=band;g.stroke();
+ rr(g,80,38,680,54,10);g.fillStyle=band;g.fill();
+ g.textAlign='center';g.textBaseline='middle';
+ g.fillStyle=bt;g.font='bold 34px Arial,sans-serif';if('letterSpacing' in g)g.letterSpacing='10px';g.fillText('FICTIONAL',420,66);
+ g.fillStyle=band;g.font='bold 28px Arial,sans-serif';if('letterSpacing' in g)g.letterSpacing='4px';g.fillText('SIMULATOR \u2022 NOT A REAL PLATE',420,364);
+ return b;});
+const cv=$('c'),x=cv.getContext('2d',{alpha:false});
+function draw(i){const o=i*7;x.drawImage(bases[(bank[o]+bank[o+2]+bank[o+6])&3],0,0);
+ for(let k=0;k<7;k++)x.drawImage(atlas,bank[o+k]*CW,0,CW,CH,55+k*CW+(k>2?30:0),100,CW,CH);}
+function pid(i){const o=i*7;let s='';for(let k=0;k<7;k++){s+=CHARS[bank[o+k]];if(k===2)s+=' ';}return s;}
+// cars (v1.1): 48 fictional rear-view cars = 4 bodies x 12 colors, sprites cached on first use
+const BODY=['SEDAN','SUV','HATCH','TRUCK'];
+const COLS=[['WHITE',[0,0,92]],['BLACK',[0,0,14]],['SILVER',[210,8,70]],['GREY',[210,6,40]],['RED',[0,75,45]],['BLUE',[215,70,42]],['GREEN',[140,50,32]],['YELLOW',[48,90,55]],['ORANGE',[24,90,52]],['BROWN',[25,45,28]],['TEAL',[180,60,36]],['PURPLE',[275,50,38]]];
+const RF=[[120,152,165,55,535,55,580,152],[95,152,108,38,592,38,605,152],[110,152,150,45,550,45,590,152],[175,152,190,62,510,62,525,152]];
+function poly(g,a){g.beginPath();g.moveTo(a[0],a[1]);for(let k=2;k<a.length;k+=2)g.lineTo(a[k],a[k+1]);g.closePath();}
+const bg=document.createElement('canvas');bg.width=840;bg.height=420;
+{const g=bg.getContext('2d');const gr=g.createLinearGradient(0,0,0,420);gr.addColorStop(0,'#0a1210');gr.addColorStop(.7,'#13201a');gr.addColorStop(1,'#050807');g.fillStyle=gr;g.fillRect(0,0,840,420);
+ g.fillStyle='#070c0a';g.fillRect(0,330,840,90);g.strokeStyle='#1b2b24';g.lineWidth=2;g.beginPath();g.moveTo(0,330);g.lineTo(840,330);g.stroke();
+ g.fillStyle='#39ff88';g.font='bold 18px ui-monospace,Menlo,monospace';g.textAlign='left';g.fillText('ALP.LOL // FICTIONAL VEHICLE SIM',16,30);}
+function mkCar(c){const t=c&3,h=COLS[c>>2][1];const b=document.createElement('canvas');b.width=700;b.height=360;const g=b.getContext('2d');
+ const col='hsl('+h[0]+','+h[1]+'%,'+h[2]+'%)',dk='hsl('+h[0]+','+h[1]+'%,'+(h[2]*.68)+'%)';
+ g.fillStyle='rgba(0,0,0,.55)';g.beginPath();g.ellipse(350,345,300,14,0,0,7);g.fill();
+ g.fillStyle='#0a0a0a';rr(g,70,285,90,70,14);g.fill();rr(g,540,285,90,70,14);g.fill();
+ const a=RF[t];poly(g,a);g.fillStyle=dk;g.fill();
+ const w=[a[0]+22,a[1]-12,a[2]+18,a[3]+16,a[4]-18,a[5]+16,a[6]-22,a[7]-12];poly(g,w);
+ const wg=g.createLinearGradient(0,a[3],0,150);wg.addColorStop(0,'#2a3a4a');wg.addColorStop(1,'#0d141b');g.fillStyle=wg;g.fill();
+ rr(g,40,150,620,170,36);g.fillStyle=col;g.fill();
+ const gr=g.createLinearGradient(0,150,0,320);gr.addColorStop(0,'rgba(255,255,255,.22)');gr.addColorStop(.5,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,0,.3)');g.fillStyle=gr;g.fill();
+ g.strokeStyle='rgba(0,0,0,.3)';g.lineWidth=3;g.beginPath();g.moveTo(100,160);g.lineTo(600,160);g.stroke();
+ if(t===3){g.strokeRect(70,175,560,105);g.fillStyle=dk;rr(g,320,164,60,12,5);g.fill();}
+ g.fillStyle='#c8161d';
+ if(t===3){rr(g,52,168,40,80,10);g.fill();rr(g,608,168,40,80,10);g.fill();}
+ else{rr(g,52,172,124,36,12);g.fill();rr(g,524,172,124,36,12);g.fill();g.fillStyle='#ff6b5a';rr(g,60,178,50,10,5);g.fill();rr(g,590,178,50,10,5);g.fill();}
+ g.fillStyle=dk;rr(g,50,284,600,40,16);g.fill();
+ return b;}
+const cars=[];
+function drawCar(i){const c=(i*37+11)%48,s=cars[c]||(cars[c]=mkCar(c));x.drawImage(bg,0,0);x.drawImage(s,70,45);
+ const o=i*7,DX=295,DY=227,k=250/840;x.drawImage(bases[(bank[o]+bank[o+2]+bank[o+6])&3],0,0,840,420,DX,DY,250,125);
+ for(let j=0;j<7;j++)x.drawImage(atlas,bank[o+j]*CW,0,CW,CH,DX+(55+j*CW+(j>2?30:0))*k,DY+100*k,CW*k,CH*k);}
+let mode=0;
+function render(){mode?drawCar(idx):draw(idx);}
+function veh(i){const c=(i*37+11)%48;return BODY[c&3]+' \u00b7 '+COLS[c>>2][0];}
+function setMode(m){mode=m;[...$('modes').children].forEach(k=>k.classList.toggle('on',+k.dataset.m===m));$('fm').textContent=m?'SHOW PLATES':'SHOW CARS';render();}
+$('modes').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setMode(+b.dataset.m);});
+// full screen (works on iPhone via CSS; rotates to fill screen in portrait)
+const stage=$('stage'),hud=$('hud');let ht=0;
+const fsOn=()=>document.body.classList.contains('fs');
+function showHud(){hud.classList.remove('hide');clearTimeout(ht);if(run)ht=setTimeout(()=>hud.classList.add('hide'),3000);}
+function setFs(on){document.body.classList.toggle('fs',on);
+ try{if(on){const r=stage.requestFullscreen||stage.webkitRequestFullscreen;if(r){const p=r.call(stage);p&&p.catch&&p.catch(()=>{});}}
+ else if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}}catch(e){}
+ if(on)showHud();else clearTimeout(ht);}
+$('fsb').addEventListener('click',()=>setFs(true));
+$('fx').addEventListener('click',()=>setFs(false));
+$('fgo').addEventListener('click',()=>setRun(!run));
+$('fm').addEventListener('click',()=>{setMode(mode?0:1);showHud();});
+stage.addEventListener('click',e=>{if(!fsOn()||e.target.closest('#hud button'))return;if(hud.classList.contains('hide'))showHud();else hud.classList.add('hide');});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&fsOn())setFs(false);});
+// state
+let fps=60,run=false,idx=0,proc=0,acc=0,last=0,chk=0,raf=0,wl=null;
+let rf=0,sh=0,pr0=0,t0=performance.now();
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+function ui(now,force){const dt=now-t0;if(dt<250&&!force)return;const s=dt/1000||1;
+ $('disp').textContent=run?fmt(rf/s):'0';$('shown').textContent=run?fmt(sh/s):'0';$('rate').textContent=run?fmt((proc-pr0)/s):'0';
+ $('proc').textContent=fmt(proc);$('pos').textContent=fmt(idx+1)+' / '+fmt(N);$('pid').textContent=pid(idx);$('veh').textContent=veh(idx);
+ if(fsOn())$('fst').textContent='SIM '+fmt(fps)+' \u00b7 DISP '+$('disp').textContent+' \u00b7 '+$('pos').textContent;
+ rf=0;sh=0;pr0=proc;t0=now;}
+function frame(t){
+ if(!run)return;
+ rf++;if(!last)last=t;
+ const dt=Math.min((t-last)/1000,.1);last=t;acc+=dt*fps;
+ const n=acc|0;
+ if(n>0){acc-=n;for(let j=0;j<n;j++){idx++;if(idx===N)idx=0;chk=(chk*31+bank[idx*7+6])|0;}
+  proc+=n;render();sh++;}
+ ui(t);raf=requestAnimationFrame(frame);}
+async function setRun(r){run=r;const b=$('go');b.textContent=r?'STOP':'START';b.classList.toggle('run',r);$('fgo').textContent=b.textContent;$('fgo').classList.toggle('run',r);if(fsOn())showHud();
+ if(r){last=0;acc=0;rf=0;sh=0;pr0=proc;t0=performance.now();raf=requestAnimationFrame(frame);
+  try{wl=await navigator.wakeLock.request('screen');}catch(e){}}
+ else{cancelAnimationFrame(raf);ui(performance.now(),true);try{wl&&wl.release();}catch(e){}wl=null;}}
+$('go').addEventListener('click',()=>setRun(!run));
+const SP=[1,10,30,60,120,500,1000,10000],ch=$('chips');
+SP.forEach(f=>{const b=document.createElement('button');b.textContent=fmt(f);b.dataset.f=f;if(f===fps)b.className='on';
+ b.addEventListener('click',()=>{fps=f;acc=0;$('sim').textContent=fmt(f);[...ch.children].forEach(c=>c.classList.toggle('on',c===b));});ch.appendChild(b);});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&run)setRun(false);});
+// icon for Home Screen
+{const ic=document.createElement('canvas');ic.width=ic.height=180;const g=ic.getContext('2d');
+ g.fillStyle='#050807';g.fillRect(0,0,180,180);g.fillStyle='#f3f3ee';g.fillRect(18,40,144,74);g.strokeStyle='#39ff88';g.lineWidth=5;g.strokeRect(18,40,144,74);
+ g.fillStyle='#111';g.font='bold 40px Arial';g.textAlign='center';g.fillText('ABC',90,92);g.fillStyle='#39ff88';g.font='bold 26px Arial';g.fillText('ALP.LOL',90,152);
+ const l=document.createElement('link');l.rel='apple-touch-icon';l.href=ic.toDataURL('image/png');document.head.appendChild(l);}
+render();ui(performance.now(),true);
+try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+})();
+</script></body></html>
